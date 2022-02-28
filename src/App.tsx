@@ -1,13 +1,19 @@
-import React, { FC, ChangeEvent, useState } from "react";
+import React, { FC, ChangeEvent, useState, useEffect } from "react";
 import "./App.css";
 import TodoTask from "./Components/TodoTask";
 import { ITask } from "./Interfaces";
+import { addTodo, deleteTodo, getTodos } from "./services/TodoService";
 
 const App: FC = () => {
   const [task, setTask] = useState<string>("");
   const [deadline, setDeadline] = useState<number>(0);
   const [todoList, setTodoList] = useState<ITask[]>([]);
 
+  useEffect(() => {
+    getTodos().then((items) => {
+      setTodoList(items);
+    });
+  }, []);
   const taskChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setTask(event.target.value);
   };
@@ -18,18 +24,22 @@ const App: FC = () => {
 
   const addTask = (): void => {
     const newTask = { taskName: task, deadline: deadline } as ITask;
-    const tasks = [...todoList, newTask];
-    setTodoList(tasks);
-    setTask("");
-    setDeadline(0);
+    addTodo(newTask).then(() => {
+      getTodos().then((todos) => {
+        setTodoList(todos);
+        setTask("");
+        setDeadline(0);
+      });
+    });
   };
 
-  const completeTask = (taskNameToDelete: string): void => {
-    setTodoList(
-        todoList.filter((task) => {
-          return task.taskName != taskNameToDelete;
-        })
-    );
+  const completeTask = (id?: string): void => {
+    if (id == null) {
+      return;
+    }
+    deleteTodo(id).then(() => {
+      getTodos().then((todos) => setTodoList(todos));
+    });
   };
   return (
       <div className="App">
